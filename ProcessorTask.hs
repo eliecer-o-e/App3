@@ -59,3 +59,49 @@ actualizaListaAbierta nodo open =
             then nodo : filter (not . mismaPos) open  -- filter me devuelve todo open menos el que tiene la misma pos (nodo)
             else open  -- no es mejor, dejamos como está
 
+-- Esta es la función que expande los nodos
+-- Espera de parámetro la matriz, el nodo actual
+-- Devuelve la lista de nodos vecinos que son visitables
+obtenerListaVisitables :: [[Int]] -> Node -> [Node] -> [Node]
+obtenerListaVisitables matriz (Node (fila, columna) _ _ _  _) listaCerrada =
+    let filas    = length matriz
+        columnas = length (head matriz)
+        rangoValido (i, j) = i >= 0 && i < filas && j >= 0 && j < columnas
+
+        posibles = [ (fila + 1, columna), (fila, columna + 1), (fila + 1, columna + 1), (fila, columna - 1), (fila - 1, columna)]
+        neighbors = filter rangoValido posibles
+        
+        valorCelda (i, j) =
+            let base = matriz !! i !! j
+                baseAjustado = if base == 0 then (-3) else base
+                esDiagonal = i == fila + 1 && j == columna + 1
+            in if esDiagonal then baseAjustado - 2 else baseAjustado
+
+    in map (\p -> creaNodo p (valorCelda p)) neighbors 
+
+
+-- Esta es la función que extrae el nodo con el menor valor de g+h de la lista de nodos abiertos
+-- Espera de parámetro la lista de nodos abiertos
+-- Devuelve el nodo con el mayor valor de g+h y la lista de nodos abiertos sin ese nodo
+mayorDeLaLista :: [Node] -> (Node, [Node])
+mayorDeLaLista [] = error "Lista vacía"
+mayorDeLaLista (x:xs) = extract x [] xs
+    where
+        extract mayor acumulador [] = (mayor, reverse acumulador)
+        extract mayor acumulador (y:ys)
+            | fromIntegral(g y) + h y > fromIntegral(g mayor) + h mayor = extract y (mayor : acumulador) ys -- si g+h es mayor, entonces y es el nuevo mayor
+            | otherwise  = extract mayor (y : acumulador) ys
+
+
+
+-- Esta es la función que reconstruye el camino
+-- Espera de parámetro el nodo actual y la lista de nodos que forman el camino
+-- Devuelve la lista de nodos que forman el camino
+reconstruirCamino :: Node -> [Node] -> [Node]
+reconstruirCamino current path =
+    let newPath = current : path
+    in case parent current of
+        Nothing   -> newPath
+        Just p -> reconstruirCamino p newPath
+
+
